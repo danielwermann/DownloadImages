@@ -11,9 +11,6 @@ using System.Diagnostics;
 
 namespace DownloadImages
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
@@ -36,16 +33,31 @@ namespace DownloadImages
 
         private void buttonChooseFolder_Click(object sender, RoutedEventArgs e)
         {
-            this.folderBrowserDialog.Description = "Selecione uma pasta para armazenar as imagens";
-            this.folderBrowserDialog.RootFolder = Environment.SpecialFolder.MyComputer;
-            this.folderBrowserDialog.ShowNewFolderButton = true;
+            SetFolderBrowserDialogAttributes();
 
             if( this.folderBrowserDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 textBoxChosenFolder.Text = this.folderBrowserDialog.SelectedPath;
-                directoryFolder = this.folderBrowserDialog.SelectedPath;
-                logFileFolder = directoryFolder + "\\LOG.txt";
+                SetDirectoryFolder();
+                SetLogFileFolder();
             }
+        }
+
+        private void SetDirectoryFolder()
+        {
+            directoryFolder = this.folderBrowserDialog.SelectedPath;
+        }
+
+        private void SetLogFileFolder()
+        {
+            logFileFolder = string.Format("{0}\\{1}", directoryFolder, "LOG.txt");
+        }
+
+        private void SetFolderBrowserDialogAttributes()
+        {
+            this.folderBrowserDialog.Description = "Selecione uma pasta para armazenar as imagens";
+            this.folderBrowserDialog.RootFolder = Environment.SpecialFolder.MyComputer;
+            this.folderBrowserDialog.ShowNewFolderButton = true;
         }
 
         private void LogHyperlink_Click(object sender, RoutedEventArgs e)
@@ -55,59 +67,78 @@ namespace DownloadImages
 
         private void buttonStartDownload_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrEmpty(directoryFolder))
-            {
-                System.Windows.MessageBox.Show("Você deve selecionar o diretório para salvar as imagens antes de iniciar o download!", "Atenção", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                return;
-            }
+            var hasErrors = ValidateDirectoryFolder();
+
             var urlsBlock = textBoxLinks.Text;
 
-            if (string.IsNullOrEmpty(urlsBlock))
-            {
-                System.Windows.MessageBox.Show("Você deve adicionar pelo menos uma URL para download!", "Atenção", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                return;
-            }
-
+            hasErrors = hasErrors && ValidateUrlsBlock(urlsBlock);
+            
             var urls = urlsBlock.Split(new char[]{';'}, StringSplitOptions.RemoveEmptyEntries);
 
+            hasErrors = hasErrors && ValidateUrls(urls);
+
+            DownloadFile(urls);
+        }
+
+        private bool ValidateUrls(string[] urls)
+        {
             if (urls.Count() <= 0)
             {
-                System.Windows.MessageBox.Show("Você deve adicionar pelo menos uma URL para download!", "Atenção", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                return;
+                ShowErrorMessage("Você deve adicionar pelo menos uma URL para download!");
+                return false;
             }
+            return true;
+        }
 
-            downloadFile(urls);
+        private bool ValidateUrlsBlock(string urlsBlock)
+        {
+            if (string.IsNullOrEmpty(urlsBlock))
+            {
+                ShowErrorMessage("Você deve adicionar pelo menos uma URL para download!");
+                return false;
+            }
+            return true;
+        }
+
+        private bool ValidateDirectoryFolder()
+        {
+            if (string.IsNullOrEmpty(directoryFolder))
+            {
+                ShowErrorMessage("Você deve selecionar o diretório para salvar as imagens antes de iniciar o download!");
+                return false;
+            }
+            return true;
+        }
+
+        private void ShowErrorMessage(string message)
+        {
+            System.Windows.MessageBox.Show(message, "Atenção", MessageBoxButton.OK, MessageBoxImage.Exclamation);
         }
 
         private string GetFileName(int index, string extension)
         {
+            if (index < 10)
+            {
+                return string.Format("000{0}{1}", index.ToString(), extension);
+            }
+
+            if (index < 100)
+            {
+                return "00" + index.ToString() + extension;
+            }
+
             if (index < 1000)
             {
-                if (index < 100)
-                {
-                    if (index < 10)
-                    {
-                        return "000" + index.ToString() + extension;
-                    }
-                    return "00" + index.ToString() + extension;
-                }
                 return "0" + index.ToString() + extension;
             }
+
             return index.ToString() + extension;
         }
 
-        private void downloadFile(IEnumerable<string> urls)
+        private void DownloadFile(IEnumerable<string> urls)
         {
-            timer = new Timer();
-            stopWatch = new Stopwatch();
-            timer.Interval = 1000;
-            timer.Enabled = true;
-            timer.Start();
-            stopWatch.Start();
-            timer.Tick += new EventHandler(timer_Tick);
-            log.AppendLine("==================================");
-            log.AppendLine(string.Format("Início: {0}.", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")));
-            log.AppendLine("==================================");
+            StartDownloadTimeCounter();
+            
             foreach (var url in urls)
             {
                 downloadUrls.Enqueue(url);
@@ -118,16 +149,27 @@ namespace DownloadImages
             buttonStartDownload.Content = "Downloading...";
             buttonStartDownload.IsEnabled = false;
             
-            DownloadFile();
+            DownloadFileAsync();
         }
 
-        void timer_Tick(object sender, EventArgs e)
+        private void StartDownloadTimeCounter()
+        {
+            timer = new Timer();
+            stopWatch = new Stopwatch();
+            timer.Interval = 1000;
+            timer.Enabled = true;
+            timer.Start();
+            stopWatch.Start();
+            timer.Tick += new EventHandler(timer_Tick);
+        }
+
+        private void timer_Tick(object sender, EventArgs e)
         {
             var ts = stopWatch.Elapsed;
             labelTimers.Content = string.Format("Tempo decorrido: {0:00}:{1:00}:{2:00}", ts.Hours, ts.Minutes, ts.Seconds);
         }
 
-        private void DownloadFile()
+        private void DownloadFileAsync()
         {            
             if (downloadUrls.Any())
             {
@@ -136,15 +178,15 @@ namespace DownloadImages
                 client.DownloadFileCompleted += client_DownloadFileCompleted;
 
                 var url = downloadUrls.Dequeue();
-                var fileExtensionIndex = url.LastIndexOf(".");
-                var fileExtension = url.Substring(fileExtensionIndex, url.Length - fileExtensionIndex);
-                fileName = GetFileName(fileNameIndex, fileExtension);
                 url = url.Replace(Environment.NewLine, string.Empty);
+
+                var fileExtension = GetFileExtension(url);
+                fileName = GetFileName(fileNameIndex, fileExtension);
 
                 log.AppendLine(string.Format("URL: {0}", url));
                 log.AppendLine(string.Format("Imagem: {0}", fileName));
 
-                client.DownloadFileAsync(new Uri(url), directoryFolder + "\\" + fileName);
+                client.DownloadFileAsync(new Uri(url), string.Format("{0}\\{1}", directoryFolder, fileName));
                 
                 labelProgress.Content = string.Format("Imagem {0} de {1}...", fileNameIndex, numberOfFiles);
                 
@@ -152,19 +194,30 @@ namespace DownloadImages
                 
                 return;
             }
+
             buttonStartDownload.Content = "Download completo!";
             
-            log.AppendLine("==================================");
-            log.AppendLine(string.Format("Fim: {0}.", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")));
-            log.AppendLine("==================================");
             SaveLog(log);
 
             LogHyperlink_TextBlock.Visibility = System.Windows.Visibility.Visible;
-            
-            labelProgress.Content = string.Format("Finalizado. {0}", labelProgress.Content);
-            labelFilesFailed.Content = string.Format("{0} imagens falharam.",numberOfFilesFailed);
-            labelFilesOk.Content = string.Format("{0} imagens Ok.", numberOfFilesOk);
+
+            SetStatusLabelContents();
+
             stopWatch.Stop();
+        }
+
+        private void SetStatusLabelContents()
+        {
+            labelProgress.Content = string.Format("Finalizado. {0}", labelProgress.Content);
+            labelFilesFailed.Content = string.Format("{0} imagens falharam.", numberOfFilesFailed);
+            labelFilesOk.Content = string.Format("{0} imagens Ok.", numberOfFilesOk);
+        }
+
+        private static string GetFileExtension(string url)
+        {
+            var fileExtensionIndex = url.LastIndexOf(".");
+            var fileExtension = url.Substring(fileExtensionIndex, url.Length - fileExtensionIndex);
+            return fileExtension;
         }
 
         private void client_DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
@@ -173,8 +226,7 @@ namespace DownloadImages
             {
                 log.AppendLine("Status: FALHA");
                 numberOfFilesFailed++;
-                FileInfo fileToDelete = new FileInfo(directoryFolder + "\\" + fileName);
-                fileToDelete.Delete();
+                DeleteFailedFile();
             }
             else if (e.Cancelled)
             {
@@ -189,7 +241,13 @@ namespace DownloadImages
 
             log.AppendLine();
 
-            DownloadFile();
+            DownloadFileAsync();
+        }
+
+        private void DeleteFailedFile()
+        {
+            FileInfo fileToDelete = new FileInfo(directoryFolder + "\\" + fileName);
+            fileToDelete.Delete();
         }
 
         private void client_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
