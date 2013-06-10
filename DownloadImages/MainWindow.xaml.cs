@@ -15,17 +15,18 @@ namespace DownloadImages
     {
         private FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
         private Queue<string> downloadUrls = new Queue<string>();
-        private string directoryFolder = "";
-        private int fileNameIndex = 1;
-        private int numberOfFiles = 0;
-        private StringBuilder log = new StringBuilder();
-        private string logFileFolder = "";
-        private int numberOfFilesOk = 0;
-        private int numberOfFilesFailed = 0;
-        private string fileName = "";
         private Stopwatch stopWatch;
         private Timer timer;
-
+        private StringBuilder log = new StringBuilder();
+        private string directoryFolder = "";
+        private string logFileFolder = "";
+        private string fileName = "";
+        private int fileNameIndex = 1;
+        private int downloadIndex = 1;
+        private int numberOfFiles = 0;
+        private int numberOfFilesOk = 0;
+        private int numberOfFilesFailed = 0;
+        
         public MainWindow()
         {
             InitializeComponent();
@@ -67,47 +68,34 @@ namespace DownloadImages
 
         private void buttonStartDownload_Click(object sender, RoutedEventArgs e)
         {
-            var hasErrors = ValidateDirectoryFolder();
+            var hasErrors = false;
 
-            var urlsBlock = textBoxLinks.Text;
-
-            hasErrors = hasErrors && ValidateUrlsBlock(urlsBlock);
-            
-            var urls = urlsBlock.Split(new char[]{';'}, StringSplitOptions.RemoveEmptyEntries);
-
-            hasErrors = hasErrors && ValidateUrls(urls);
-
-            DownloadFile(urls);
-        }
-
-        private bool ValidateUrls(string[] urls)
-        {
-            if (urls.Count() <= 0)
-            {
-                ShowErrorMessage("Você deve adicionar pelo menos uma URL para download!");
-                return false;
-            }
-            return true;
-        }
-
-        private bool ValidateUrlsBlock(string urlsBlock)
-        {
-            if (string.IsNullOrEmpty(urlsBlock))
-            {
-                ShowErrorMessage("Você deve adicionar pelo menos uma URL para download!");
-                return false;
-            }
-            return true;
-        }
-
-        private bool ValidateDirectoryFolder()
-        {
             if (string.IsNullOrEmpty(directoryFolder))
             {
                 ShowErrorMessage("Você deve selecionar o diretório para salvar as imagens antes de iniciar o download!");
-                return false;
+                return;
             }
-            return true;
+
+            var urlsBlock = textBoxLinks.Text;
+
+            if (string.IsNullOrEmpty(urlsBlock))
+            {
+                ShowErrorMessage("Você deve adicionar pelo menos uma URL para download!");
+                return;
+            }
+            
+            var urls = urlsBlock.Split(new char[]{';'}, StringSplitOptions.RemoveEmptyEntries);
+
+            if (urls.Count() <= 0)
+            {
+                ShowErrorMessage("Você deve adicionar pelo menos uma URL para download!");
+                return;
+            }
+            
+            if (!hasErrors)
+            {
+                DownloadFile(urls);
+            }
         }
 
         private void ShowErrorMessage(string message)
@@ -137,6 +125,8 @@ namespace DownloadImages
 
         private void DownloadFile(IEnumerable<string> urls)
         {
+            int.TryParse(textBoxImageIndex.Text, out fileNameIndex);
+            
             StartDownloadTimeCounter();
             
             foreach (var url in urls)
@@ -188,9 +178,10 @@ namespace DownloadImages
 
                 client.DownloadFileAsync(new Uri(url), string.Format("{0}\\{1}", directoryFolder, fileName));
                 
-                labelProgress.Content = string.Format("Imagem {0} de {1}...", fileNameIndex, numberOfFiles);
+                labelProgress.Content = string.Format("Imagem {0} de {1}...", downloadIndex, numberOfFiles);
                 
                 fileNameIndex++;
+                downloadIndex++;
                 
                 return;
             }

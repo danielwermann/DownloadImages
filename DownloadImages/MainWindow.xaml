@@ -5,9 +5,9 @@
     <Grid Height="592">
         <TextBox Height="31" HorizontalAlignment="Left" Margin="12,27,0,0" Name="textBoxChosenFolder" VerticalAlignment="Top" Width="583" IsReadOnly="True" FontWeight="Normal" VerticalContentAlignment="Center" Background="#0D000000" />
         <Button Content="Selecionar pasta..." Height="31" HorizontalAlignment="Left" Margin="601,27,0,0" Name="buttonChooseFolder" VerticalAlignment="Top" Width="190" Click="buttonChooseFolder_Click" FontWeight="Bold"></Button>
-        <Label Content="Pasta selecionada para armazenamento das imagens:" Height="28" HorizontalAlignment="Left" Margin="8,0,0,0" Name="label1" VerticalAlignment="Top" FontWeight="Bold" />
-        <Label Content="Coloque abaixo as URL's das imagens separadas por ';':" Height="28" HorizontalAlignment="Left" Margin="8,73,0,0" Name="label2" VerticalAlignment="Top" FontWeight="Bold" />
-        <TextBox Height="371" HorizontalAlignment="Left" Margin="12,98,0,0" Name="textBoxLinks" VerticalAlignment="Top" Width="779" Background="#0D000000" AcceptsReturn="True" TextWrapping="WrapWithOverflow" VerticalScrollBarVisibility="Auto" />
+        <Label Content="Pasta selecionada para armazenamento das imagens:" Height="28" HorizontalAlignment="Left" Margin="8,5,0,0" Name="label1" VerticalAlignment="Top" FontWeight="Bold" />
+        <Label Content="Coloque abaixo as URL's das imagens separadas por ';':" Height="28" HorizontalAlignment="Left" Margin="8,106,0,0" Name="label2" VerticalAlignment="Top" FontWeight="Bold" />
+        <TextBox Height="341" HorizontalAlignment="Left" Margin="12,128,0,0" Name="textBoxLinks" VerticalAlignment="Top" Width="779" Background="#0D000000" AcceptsReturn="True" TextWrapping="WrapWithOverflow" VerticalScrollBarVisibility="Auto" />
         <Button Content="Iniciar download" Height="31" HorizontalAlignment="Left" Margin="601,493,0,0" Name="buttonStartDownload" VerticalAlignment="Top" Width="190" FontWeight="Bold" Click="buttonStartDownload_Click" />
         <ProgressBar Height="17" HorizontalAlignment="Left" Margin="12,507,0,0" Name="progressBarDownload" VerticalAlignment="Top" Width="570" />
         <Label Content="Progresso:" FontWeight="Bold" Height="28" HorizontalAlignment="Left" Margin="12,479,0,0" Name="label3" VerticalAlignment="Top" />
@@ -20,5 +20,7 @@
         <Label Height="25" HorizontalAlignment="Left" Margin="12,525,0,0" Name="labelFilesOk" VerticalAlignment="Top" Foreground="#FF239423" FontSize="11" />
         <Label Height="25" HorizontalAlignment="Left" Margin="12,553,0,0" Name="labelFilesFailed" VerticalAlignment="Top" Foreground="#FFC43D32" FontSize="11" />
         <Label Content="" Height="28" HorizontalAlignment="Left" Margin="382,479,0,0" Name="labelTimers" VerticalAlignment="Top" Width="200" />
+        <Label Content="Número da primeira imagem:" FontWeight="Bold" Height="28" HorizontalAlignment="Left" Margin="7,56,0,0" Name="label4" VerticalAlignment="Top" />
+        <TextBox Background="#0D000000" FontWeight="Normal" Height="31" HorizontalAlignment="Left" IsReadOnly="False" Margin="12,78,0,0" Name="textBoxImageIndex" VerticalAlignment="Top" VerticalContentAlignment="Center" Width="50" Text="1" TextAlignment="Right"/>
     </Grid>
 </Window>
